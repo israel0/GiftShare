@@ -21,9 +21,14 @@ class Listing extends Model
         'weight',
         'dimensions',
         'status',
+        'upvotes_count',
+        'downvotes_count',
+        'comments_count',
+        'gifted_at'
     ];
 
     protected $casts = [
+        'gifted_at' => 'datetime',
         'weight' => 'decimal:2',
     ];
 
@@ -49,7 +54,25 @@ class Listing extends Model
 
     public function comments(): HasMany
     {
-        return $this->hasMany(Comment::class)->latest();
+        return $this->hasMany(Comment::class)->whereNull('parent_id');
+    }
+
+    public function allComments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->status === 'available';
+    }
+
+    public function markAsGifted(): void
+    {
+        $this->update([
+            'status' => 'gifted',
+            'gifted_at' => now()
+        ]);
     }
 
     public function scopeAvailable($query)
@@ -62,27 +85,18 @@ class Listing extends Model
         return $query->where('status', 'gifted');
     }
 
-    public function scopeSearch($query, string $search = null)
+    public function scopeSearch($query, $search)
     {
-        if ($search) {
-            return $query->whereFullText(['title', 'description'], $search);
-        }
-        return $query;
+        return $query->whereFullText(['title', 'description'], $search);
     }
 
-    public function scopeFilterByCategory($query, $categoryId = null)
+    public function scopeFilterByCategory($query, $categoryId)
     {
-        if ($categoryId) {
-            return $query->where('category_id', $categoryId);
-        }
-        return $query;
+        return $query->where('category_id', $categoryId);
     }
 
-    public function scopeFilterByCity($query, $city = null)
+    public function scopeFilterByCity($query, $city)
     {
-        if ($city) {
-            return $query->where('city', 'like', "%{$city}%");
-        }
-        return $query;
+        return $query->where('city', 'like', "%{$city}%");
     }
 }

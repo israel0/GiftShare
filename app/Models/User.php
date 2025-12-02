@@ -45,4 +45,30 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function listings()
+    {
+        return $this->hasMany(Listing::class);
+    }
+
+    public function votes()
+    {
+        return $this->hasMany(Vote::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function hasVotedFor(Listing $listing): bool
+    {
+        return $this->votes()->where('listing_id', $listing->id)->exists();
+    }
+
+    public function getVoteFor(Listing $listing): ?string
+    {
+        $vote = $this->votes()->where('listing_id', $listing->id)->first();
+        return $vote ? $vote->type : null;
+    }
 }

@@ -2,16 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-
 class ListingPhoto extends Model
 {
-    protected $fillable = ['item_id', 'path', 'thumbnail_path', 'order'];
+    use HasFactory;
 
-    public function item(): BelongsTo
+    protected $fillable = [
+        'listing_id',
+        'path',
+        'thumbnail_path',
+        'order'
+    ];
+
+    public function listing(): BelongsTo
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(Listing::class);
     }
 }
