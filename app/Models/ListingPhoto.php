@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+
+class ListingPhoto extends Model
+{
+    protected $fillable = ['item_id', 'path', 'thumbnail_path', 'order'];
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class);
+    }
+}
