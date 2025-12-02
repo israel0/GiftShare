@@ -51,31 +51,40 @@ class ListingRepository extends EloquentRepository implements ListingRepositoryI
 
     public function filter(array $filters): LengthAwarePaginator
     {
-        $query = QueryBuilder::for(Listing::class)
-            ->allowedFilters([
-                'category_id',
-                'city',
-                'status',
-                AllowedFilter::scope('search'),
-            ])
-            ->allowedSorts(['created_at', 'upvotes_count'])
-            ->defaultSort('-created_at');
+        $query = $this->model->with(['user', 'category', 'photos'])
+            ->when(isset($filters['status']) && $filters['status'] !== 'all', function ($query) use ($filters) {
+                return $query->where('status', $filters['status']);
+            })
+            ->when(!isset($filters['status']) || $filters['status'] === 'available', function ($query) {
+                return $query->where('status', 'available');
+            })
+            ->when(isset($filters['category_id']) && $filters['category_id'], function ($query) use ($filters) {
+                return $query->where('category_id', $filters['category_id']);
+            })
+            ->when(isset($filters['city']) && $filters['city'], function ($query) use ($filters) {
+                return $query->where('city', 'like', '%' . $filters['city'] . '%');
+            })
+            ->when(isset($filters['search']) && $filters['search'], function ($query) use ($filters) {
+                return $query->where(function ($q) use ($filters) {
+                    $q->where('title', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('description', 'like', '%' . $filters['search'] . '%');
+                });
+            });
 
-        if (isset($filters['category_id'])) {
-            $query->where('category_id', $filters['category_id']);
+        switch ($filters['sort'] ?? 'newest') {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'upvotes':
+                $query->orderBy('upvotes_count', 'desc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
         }
 
-        if (isset($filters['city'])) {
-            $query->where('city', 'like', "%{$filters['city']}%");
-        }
-
-        if (!isset($filters['status'])) {
-            $query->available();
-        }
-
-        return $query->with(['user', 'category', 'photos'])
-            ->paginate($filters['per_page'] ?? 15)
-            ->appends($filters);
+        return $query->paginate($filters['per_page'] ?? 12);
     }
 
     public function getUserListings(int $userId): LengthAwarePaginator
