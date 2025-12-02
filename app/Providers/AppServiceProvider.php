@@ -11,7 +11,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(ListingRepositoryInterface::class, ListingRepository::class);
+        $this->app->bind(VoteRepositoryInterface::class, VoteRepository::class);
     }
 
     /**
