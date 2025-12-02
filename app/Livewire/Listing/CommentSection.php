@@ -13,9 +13,12 @@ class CommentSection extends Component
     public Listing $listing;
     public string $content = '';
     public ?int $parentId = null;
+    public ?int $editingCommentId = null;
+    public string $editContent = '';
 
     protected $rules = [
         'content' => 'required|min:3|max:1000',
+        'editContent' => 'required|min:3|max:1000',
     ];
 
     public function mount(Listing $listing)
@@ -25,7 +28,7 @@ class CommentSection extends Component
 
     public function submit()
     {
-        $this->validate();
+        $this->validateOnly('content');
 
         $commentService = app(CommentService::class);
         $dto = new CommentDTO(
@@ -40,6 +43,42 @@ class CommentSection extends Component
         $this->content = '';
         $this->parentId = null;
         $this->listing->refresh();
+
+        $this->dispatch('comment-added');
+    }
+
+    public function startEdit($commentId)
+    {
+        $comment = Comment::findOrFail($commentId);
+
+        if (auth()->id() !== $comment->user_id) {
+            abort(403);
+        }
+
+        $this->editingCommentId = $commentId;
+        $this->editContent = $comment->content;
+    }
+
+    public function updateComment()
+    {
+        $this->validateOnly('editContent');
+
+        $comment = Comment::findOrFail($this->editingCommentId);
+
+        if (auth()->id() !== $comment->user_id) {
+            abort(403);
+        }
+
+        $comment->update(['content' => $this->editContent]);
+
+        $this->cancelEdit();
+        $this->listing->refresh();
+    }
+
+    public function cancelEdit()
+    {
+        $this->editingCommentId = null;
+        $this->editContent = '';
     }
 
     public function replyTo(int $commentId)
@@ -52,18 +91,23 @@ class CommentSection extends Component
     {
         $comment = Comment::findOrFail($commentId);
 
-        if (auth()->id() !== $comment->user_id && !auth()->user()->is_admin) {
+        if (auth()->id() !== $comment->user_id) {
             abort(403);
         }
 
-        $comment->delete();
+        $commentService = app(CommentService::class);
+        $commentService->deleteComment($comment);
+
         $this->listing->refresh();
     }
 
     public function render()
     {
         return view('livewire.listing.comment-section', [
-            'comments' => $this->listing->comments()->with(['user', 'replies.user'])->get()
+            'comments' => $this->listing->comments()
+                ->with(['user', 'replies.user'])
+                ->orderBy('created_at', 'asc')
+                ->get()
         ]);
     }
 }

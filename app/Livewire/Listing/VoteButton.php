@@ -14,6 +14,8 @@ class VoteButton extends Component
     public int $downvotes;
     public ?string $userVote = null;
 
+    protected $listeners = ['vote-updated' => '$refresh'];
+
     public function mount(Listing $listing)
     {
         $this->listing = $listing;
@@ -37,11 +39,13 @@ class VoteButton extends Component
 
         $voteService->toggleVote($dto);
 
-        // Refresh counts
+        // Refresh data
         $this->listing->refresh();
         $this->upvotes = $this->listing->upvotes_count;
         $this->downvotes = $this->listing->downvotes_count;
-        $this->userVote = auth()->user()->getVoteFor($this->listing);
+        $this->userVote = auth()->user()->fresh()->getVoteFor($this->listing);
+
+        $this->dispatch('vote-updated');
     }
 
     public function render()
