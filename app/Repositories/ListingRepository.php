@@ -6,8 +6,6 @@ use App\Models\Listing;
 use App\Repositories\Contracts\ListingRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Spatie\QueryBuilder\QueryBuilder;
-use Spatie\QueryBuilder\AllowedFilter;
 
 class ListingRepository extends EloquentRepository implements ListingRepositoryInterface
 {
@@ -39,12 +37,12 @@ class ListingRepository extends EloquentRepository implements ListingRepositoryI
         return $this->model->create($data);
     }
 
-    public function update(Listing $listing, array $data): bool
+    public function updateListing(Listing $listing, array $data): bool
     {
         return $listing->update($data);
     }
 
-    public function delete(Listing $listing): bool
+    public function deleteListing(Listing $listing): bool
     {
         return $listing->delete();
     }
@@ -67,10 +65,11 @@ class ListingRepository extends EloquentRepository implements ListingRepositoryI
             ->when(isset($filters['search']) && $filters['search'], function ($query) use ($filters) {
                 return $query->where(function ($q) use ($filters) {
                     $q->where('title', 'like', '%' . $filters['search'] . '%')
-                    ->orWhere('description', 'like', '%' . $filters['search'] . '%');
+                      ->orWhere('description', 'like', '%' . $filters['search'] . '%');
                 });
             });
 
+        // Apply sorting
         switch ($filters['sort'] ?? 'newest') {
             case 'oldest':
                 $query->orderBy('created_at', 'asc');

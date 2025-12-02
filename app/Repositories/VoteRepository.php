@@ -21,23 +21,19 @@ class VoteRepository extends EloquentRepository implements VoteRepositoryInterfa
             $listing = Listing::find($listingId);
 
             if ($existingVote) {
-                // Remove existing vote
                 $this->removeVote($userId, $listingId);
 
-                // If same type clicked, just remove (toggle off)
                 if ($existingVote->type === $type) {
                     return $existingVote;
                 }
             }
 
-            // Create new vote
             $vote = $this->create([
                 'user_id' => $userId,
                 'listing_id' => $listingId,
                 'type' => $type
             ]);
 
-            // Update listing vote counts
             $listing->increment($type === 'upvote' ? 'upvotes_count' : 'downvotes_count');
 
             return $vote;

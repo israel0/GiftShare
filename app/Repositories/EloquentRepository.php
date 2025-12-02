@@ -44,6 +44,10 @@ abstract class EloquentRepository implements RepositoryInterface
     public function update($id, array $data): bool
     {
         $record = $this->find($id);
+        if (!$record) {
+            return false;
+        }
+
         return $record->update($data);
     }
 

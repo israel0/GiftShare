@@ -12,8 +12,8 @@ interface ListingRepositoryInterface
     public function getAll(): Collection;
     public function getPaginated(int $perPage = 15): LengthAwarePaginator;
     public function create(array $data): Listing;
-    public function update(Listing $listing, array $data): bool;
-    public function delete(Listing $listing): bool;
+    public function updateListing(Listing $listing, array $data): bool;
+    public function deleteListing(Listing $listing): bool;
     public function filter(array $filters): LengthAwarePaginator;
     public function getUserListings(int $userId): LengthAwarePaginator;
 }
